@@ -37,7 +37,9 @@ npm-debug.log*
 .DS_Store
 
 # === Cursor ===
-.cursor/
+.cursor/*
+!.cursor/plans/
+!.cursor/rules/
 
 # === OS ===
 Thumbs.db
