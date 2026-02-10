@@ -12,14 +12,20 @@ export function MessageList() {
   const streamingContent = useChatStore((s) => s.streamingContent)
   const streamingThinking = useChatStore((s) => s.streamingThinking)
   const chartData = useChatStore((s) => s.chartData)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  // 消息或流式内容追加时自动滚到底部（含中间过程 thinking）
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, streamingContent, chartData])
+    const el = scrollContainerRef.current
+    if (!el) return
+    const timer = requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight
+    })
+    return () => cancelAnimationFrame(timer)
+  }, [messages, streamingContent, streamingThinking, chartData])
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+    <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-4 space-y-4">
       {messages.length === 0 && !isStreaming ? (
         <div className="flex items-center justify-center h-full" style={{ color: 'var(--tech-text-muted)' }}>
           <div className="text-center">
@@ -99,7 +105,6 @@ export function MessageList() {
         </>
       )}
 
-      <div ref={bottomRef} />
     </div>
   )
 }

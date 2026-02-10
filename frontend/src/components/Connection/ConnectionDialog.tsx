@@ -38,6 +38,25 @@ const defaultForm: FormData = {
   database: '',
 }
 
+/** 单字段校验结果 */
+type FieldErrors = Partial<Record<keyof FormData, string>>
+
+function validateForm(form: FormData, isEdit: boolean): FieldErrors {
+  const err: FieldErrors = {}
+  if (!form.name.trim()) err.name = '请输入连接名称'
+  if (!form.host.trim()) err.host = '请输入主机地址'
+  const portNum = parseInt(form.port, 10)
+  if (!form.port.trim()) err.port = '请输入端口'
+  else if (Number.isNaN(portNum) || portNum < 1 || portNum > 65535) err.port = '端口须为 1–65535'
+  if (!form.user.trim()) err.user = '请输入用户名'
+  if (!isEdit) {
+    if (form.password === undefined || form.password === null) err.password = '请输入密码'
+    else if (!String(form.password).trim()) err.password = '请输入密码'
+  }
+  if (!form.database.trim()) err.database = '请输入数据库名'
+  return err
+}
+
 export function ConnectionDialog({ open, onClose, editConnection }: Props) {
   const addConnection = useConnectionStore((s) => s.addConnection)
   const updateConnection = useConnectionStore((s) => s.updateConnection)
@@ -48,6 +67,8 @@ export function ConnectionDialog({ open, onClose, editConnection }: Props) {
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /** 提交过一次后保留各字段校验错误，用于显示红色标识与报错 */
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
 
   const isEdit = !!editConnection
 
@@ -68,6 +89,7 @@ export function ConnectionDialog({ open, onClose, editConnection }: Props) {
       }
       setTestResult(null)
       setError(null)
+      setFieldErrors({})
     }
   }, [open, editConnection])
 
@@ -99,13 +121,17 @@ export function ConnectionDialog({ open, onClose, editConnection }: Props) {
 
   /** 保存连接 */
   const handleSave = async () => {
-    // 基本验证
-    if (!form.name.trim()) { setError('请输入连接名称'); return }
-    if (!form.host.trim()) { setError('请输入主机地址'); return }
-    if (!form.database.trim()) { setError('请输入数据库名'); return }
+    const errors = validateForm(form, isEdit)
+    const hasError = Object.keys(errors).length > 0
+    setFieldErrors(errors)
+    if (hasError) {
+      const firstMsg = Object.values(errors)[0]
+      setError(firstMsg ?? '请完善必填项后再提交')
+      return
+    }
+    setError(null)
 
     setSaving(true)
-    setError(null)
     try {
       const data = {
         name: form.name.trim(),
@@ -128,6 +154,24 @@ export function ConnectionDialog({ open, onClose, editConnection }: Props) {
       setSaving(false)
     }
   }
+
+  const inputBase = (field: keyof FormData) => ({
+    className: `w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors focus:ring-1 ${
+      fieldErrors[field] ? 'focus:ring-red-500/50' : 'focus:ring-cyan-500/50'
+    }`,
+    style: {
+      backgroundColor: 'var(--tech-bg-card)' as const,
+      border: `1px solid ${fieldErrors[field] ? 'rgb(239, 68, 68)' : 'var(--tech-border)'}`,
+      color: 'var(--tech-text)' as const,
+    },
+  })
+  const RequiredStar = () => (
+    <span className="text-red-500 ml-0.5" aria-label="必填">*</span>
+  )
+  const FieldError = ({ field }: { field: keyof FormData }) =>
+    fieldErrors[field] ? (
+      <p className="text-xs text-red-400 mt-0.5" role="alert">{fieldErrors[field]}</p>
+    ) : null
 
   if (!open) return null
 
@@ -167,104 +211,98 @@ export function ConnectionDialog({ open, onClose, editConnection }: Props) {
         <div className="space-y-3">
           {/* 连接名称 */}
           <div>
-            <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>连接名称</label>
+            <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>
+              连接名称<RequiredStar />
+            </label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => handleChange('name', e.target.value)}
               placeholder="例如：生产库-销售数据"
-              className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors focus:ring-1 focus:ring-cyan-500/50"
-              style={{
-                backgroundColor: 'var(--tech-bg-card)',
-                border: '1px solid var(--tech-border)',
-                color: 'var(--tech-text)',
-              }}
+              aria-invalid={!!fieldErrors.name}
+              {...inputBase('name')}
             />
+            <FieldError field="name" />
           </div>
 
           {/* 主机 + 端口 */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>主机地址</label>
+              <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>
+                主机地址<RequiredStar />
+              </label>
               <input
                 type="text"
                 value={form.host}
                 onChange={(e) => handleChange('host', e.target.value)}
                 placeholder="localhost"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors focus:ring-1 focus:ring-cyan-500/50"
-                style={{
-                  backgroundColor: 'var(--tech-bg-card)',
-                  border: '1px solid var(--tech-border)',
-                  color: 'var(--tech-text)',
-                }}
+                aria-invalid={!!fieldErrors.host}
+                {...inputBase('host')}
               />
+              <FieldError field="host" />
             </div>
             <div className="w-24">
-              <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>端口</label>
+              <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>
+                端口<RequiredStar />
+              </label>
               <input
                 type="text"
                 value={form.port}
                 onChange={(e) => handleChange('port', e.target.value)}
                 placeholder="3306"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors focus:ring-1 focus:ring-cyan-500/50"
-                style={{
-                  backgroundColor: 'var(--tech-bg-card)',
-                  border: '1px solid var(--tech-border)',
-                  color: 'var(--tech-text)',
-                }}
+                aria-invalid={!!fieldErrors.port}
+                {...inputBase('port')}
               />
+              <FieldError field="port" />
             </div>
           </div>
 
           {/* 用户名 + 密码 */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>用户名</label>
+              <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>
+                用户名<RequiredStar />
+              </label>
               <input
                 type="text"
                 value={form.user}
                 onChange={(e) => handleChange('user', e.target.value)}
                 placeholder="root"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors focus:ring-1 focus:ring-cyan-500/50"
-                style={{
-                  backgroundColor: 'var(--tech-bg-card)',
-                  border: '1px solid var(--tech-border)',
-                  color: 'var(--tech-text)',
-                }}
+                aria-invalid={!!fieldErrors.user}
+                {...inputBase('user')}
               />
+              <FieldError field="user" />
             </div>
             <div className="flex-1">
-              <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>密码</label>
+              <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>
+                密码<RequiredStar />
+              </label>
               <input
                 type="password"
                 value={form.password}
                 onChange={(e) => handleChange('password', e.target.value)}
                 placeholder="••••••"
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors focus:ring-1 focus:ring-cyan-500/50"
-                style={{
-                  backgroundColor: 'var(--tech-bg-card)',
-                  border: '1px solid var(--tech-border)',
-                  color: 'var(--tech-text)',
-                }}
+                aria-invalid={!!fieldErrors.password}
+                {...inputBase('password')}
               />
+              <FieldError field="password" />
             </div>
           </div>
 
           {/* 数据库名 */}
           <div>
-            <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>数据库名</label>
+            <label className="block text-xs mb-1" style={{ color: 'var(--tech-text-muted)' }}>
+              数据库名<RequiredStar />
+            </label>
             <input
               type="text"
               value={form.database}
               onChange={(e) => handleChange('database', e.target.value)}
               placeholder="my_database"
-              className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-colors focus:ring-1 focus:ring-cyan-500/50"
-              style={{
-                backgroundColor: 'var(--tech-bg-card)',
-                border: '1px solid var(--tech-border)',
-                color: 'var(--tech-text)',
-              }}
+              aria-invalid={!!fieldErrors.database}
+              {...inputBase('database')}
             />
+            <FieldError field="database" />
           </div>
         </div>
 
@@ -308,7 +346,7 @@ export function ConnectionDialog({ open, onClose, editConnection }: Props) {
         <div className="flex items-center gap-3 mt-5">
           <button
             onClick={handleTest}
-            disabled={testing || !form.host || !form.database}
+            disabled={testing || !form.host.trim() || !form.database.trim()}
             className="px-4 py-2 text-xs rounded-lg transition-colors"
             style={{
               backgroundColor: testing ? 'var(--tech-bg-elevated)' : 'var(--tech-bg-card)',
@@ -330,17 +368,11 @@ export function ConnectionDialog({ open, onClose, editConnection }: Props) {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || !form.name.trim() || !form.host.trim() || !form.database.trim()}
+            disabled={saving}
             className="px-4 py-2 text-xs rounded-lg transition-colors text-white"
             style={{
-              backgroundColor:
-                saving || !form.name.trim() || !form.host.trim() || !form.database.trim()
-                  ? 'var(--tech-bg-elevated)'
-                  : 'var(--tech-accent)',
-              color:
-                saving || !form.name.trim() || !form.host.trim() || !form.database.trim()
-                  ? 'var(--tech-text-muted)'
-                  : '#fff',
+              backgroundColor: saving ? 'var(--tech-bg-elevated)' : 'var(--tech-accent)',
+              color: saving ? 'var(--tech-text-muted)' : '#fff',
             }}
           >
             {saving ? '保存中...' : '保存'}

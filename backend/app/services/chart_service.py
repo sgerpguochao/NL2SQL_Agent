@@ -118,15 +118,17 @@ def _fallback_table(query_result: str, error: str = "") -> dict[str, Any]:
     降级方案：将查询结果转为简单表格
 
     Args:
-        query_result: SQL 查询结果字符串
+        query_result: SQL 查询结果字符串（可能是 Python repr，含 Decimal、datetime 等）
         error: 错误信息
 
     Returns:
         table 类型的图表数据
     """
     try:
-        # 尝试解析查询结果
-        data = eval(query_result) if query_result else []
+        s = (query_result or "").strip()
+        # MySQL/PyMySQL 返回 Python repr，含 Decimal('x.xx')，eval 会报 NameError
+        s_clean = re.sub(r"Decimal\(['\"]([^'\"]+)['\"]\)", r"\1", s)
+        data = eval(s_clean) if s_clean else []
 
         if isinstance(data, list) and len(data) > 0:
             if isinstance(data[0], dict):
