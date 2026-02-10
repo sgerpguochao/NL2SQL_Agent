@@ -13,7 +13,7 @@ import json
 import sys
 import requests
 
-BASE = "http://127.0.0.1:8000"
+BASE = "http://127.0.0.1:8118"
 PASS = "[PASS]"
 FAIL = "[FAIL]"
 results = []

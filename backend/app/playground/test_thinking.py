@@ -14,7 +14,7 @@ import json
 import sys
 import requests
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://127.0.0.1:8118"
 PASS = "[PASS]"
 FAIL = "[FAIL]"
 results = []
@@ -260,7 +260,7 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except requests.exceptions.ConnectionError:
-        print("\n[错误] 无法连接后端，请确保已启动: uvicorn app.main:app --port 8000\n")
+        print("\n[错误] 无法连接后端，请确保已启动: uvicorn app.main:app --port 8118\n")
         sys.exit(1)
     except Exception as e:
         print(f"\n[错误] {e}")

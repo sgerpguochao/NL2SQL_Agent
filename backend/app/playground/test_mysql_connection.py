@@ -9,7 +9,7 @@ Phase5 MySQL 连接管理全流程测试脚本
 
 前置条件:
   1. MySQL 服务运行中 (localhost:3306, ai_sales_data)
-  2. 后端服务运行中: uvicorn app.main:app --reload --port 8000
+  2. 后端服务运行中: uvicorn app.main:app --reload --port 8118
 """
 
 import requests
@@ -18,7 +18,7 @@ import sys
 import time
 from datetime import datetime
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8118"
 CONN_API = f"{BASE_URL}/api/connections"
 DB_API = f"{BASE_URL}/api/database"
 CHAT_API = f"{BASE_URL}/api/chat"

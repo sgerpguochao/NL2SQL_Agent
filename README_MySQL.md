@@ -159,7 +159,7 @@ MYSQL_DATABASE=ai_sales_data
 EOF
 
 # 启动后端（首次启动可自动创建默认连接）
-python -m uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8118
 ```
 
 ### 4. 前端配置与启动
@@ -254,7 +254,7 @@ npm run dev
 
 ```bash
 cd backend
-# 确保后端已启动在 8000 端口
+# 确保后端已启动在 8118 端口
 python -m app.playground.test_mysql_connection
 ```
 
@@ -283,8 +283,8 @@ npm run build
 
 ## 开发说明
 
-- 后端 `--reload` 模式：`python -m uvicorn app.main:app --reload --port 8000`
-- 前端 Vite 通过 proxy 将 `/api` 代理到 `127.0.0.1:8000`
+- 后端 `--reload` 模式：`python -m uvicorn app.main:app --reload --port 8118`
+- 前端 Vite 通过 proxy 将 `/api` 代理到 `127.0.0.1:8118`
 - 连接配置存储在 `backend/data/connections.json`，可手动编辑（不推荐）
 
 ---

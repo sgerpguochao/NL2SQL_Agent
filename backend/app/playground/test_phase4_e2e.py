@@ -2,7 +2,7 @@
 Phase 4 端到端验证脚本
 测试完整流程：新建会话 -> 提问 -> SSE流式回答 -> SQL -> 图表 -> 追问上下文 -> 会话管理
 
-运行方式（确保后端已启动在 8000 端口）：
+运行方式（确保后端已启动在 8118 端口）：
   python backend/app/playground/test_phase4_e2e.py
 """
 
@@ -11,7 +11,7 @@ import json
 import time
 import sys
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://127.0.0.1:8118"
 
 # 计数器
 passed = 0

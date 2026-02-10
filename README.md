@@ -137,7 +137,7 @@ echo DB_PATH=./data/business.db >> .env
 # 运行 python sql_repo/init_db.py 后，将 DB_PATH 改为 sql_repo/data/test.db 的绝对路径
 
 # 启动后端（首次启动会自动创建示例数据库）
-python -m uvicorn app.main:app --port 8000
+python -m uvicorn app.main:app --port 8118
 ```
 
 ### 3. 前端配置与启动
@@ -222,9 +222,9 @@ npm run dev
 
 ## 开发说明
 
-- 后端使用 `--reload` 参数启动可实现热更新：`python -m uvicorn app.main:app --reload --port 8000`
+- 后端使用 `--reload` 参数启动可实现热更新：`python -m uvicorn app.main:app --reload --port 8118`
 - 前端 Vite 开发服务器自带 HMR 热更新
-- 前端通过 Vite proxy 将 `/api` 请求代理到后端 `127.0.0.1:8000`，开发时无需处理跨域
+- 前端通过 Vite proxy 将 `/api` 请求代理到后端 `127.0.0.1:8118`，开发时无需处理跨域
 
 ## License
 
