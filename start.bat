@@ -3,8 +3,8 @@ chcp 65001 >nul
 set ROOT=%~dp0
 cd /d "%ROOT%"
 
-echo [NL2SQL] Starting backend (port 8118)...
-start "NL2SQL-Backend" cmd /k "cd /d "%ROOT%backend" && python -m uvicorn app.main:app --reload --port 8118"
+echo [NL2SQL] Starting backend (port 8118, conda env: nl2sql_vc)...
+start "NL2SQL-Backend" cmd /k "call conda activate nl2sql_vc && cd /d "%ROOT%backend" && python -m uvicorn app.main:app --reload --port 8118"
 
 timeout /t 2 /nobreak >nul
 

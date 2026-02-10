@@ -3,8 +3,8 @@ set -e
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
-echo "[NL2SQL] Starting backend (port 8118)..."
-(cd "$ROOT/backend" && nohup python -m uvicorn app.main:app --reload --port 8118 > ../.backend.log 2>&1 &)
+echo "[NL2SQL] Starting backend (port 8118, conda env: nl2sql_vc)..."
+(cd "$ROOT/backend" && nohup conda run -n nl2sql_vc python -m uvicorn app.main:app --reload --port 8118 > ../.backend.log 2>&1 &)
 sleep 2
 
 echo "[NL2SQL] Starting frontend (port 5173, host 0.0.0.0)..."
