@@ -9,6 +9,16 @@ import {
   getSessionDetailApi,
   type BackendMessage,
 } from '../api/client'
+import { useSessionStore } from './sessionStore'
+
+const MAX_TITLE_LENGTH = 24
+
+/** 用首条用户消息生成会话标题（截断、去换行） */
+function toSessionTitle(content: string): string {
+  const oneLine = content.replace(/\s+/g, ' ').trim()
+  if (!oneLine) return '新对话'
+  return oneLine.length <= MAX_TITLE_LENGTH ? oneLine : oneLine.slice(0, MAX_TITLE_LENGTH) + '…'
+}
 
 interface ChatState {
   messages: Message[]
@@ -43,6 +53,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   chartData: null,
 
   sendMessage: async (sessionId, content) => {
+    const isFirstMessage = get().messages.length === 0
+
     const userMsg: Message = {
       id: genId(),
       session_id: sessionId,
@@ -55,11 +67,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isStreaming: true,
       streamingContent: '',
       streamingSql: null,
+      chartData: null, // 清空上一次图表，避免残留到新的流式气泡
     }))
 
     let finalContent = ''
     let finalSql: string | null = null
     let finalChart: ChartData | null = null
+
+    const updateTitleIfFirst = () => {
+      if (isFirstMessage) {
+        useSessionStore.getState().updateSessionTitle(sessionId, toSessionTitle(content))
+      }
+    }
 
     try {
       await sendChatMessageApi(sessionId, content, {
@@ -90,7 +109,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
             isStreaming: false,
             streamingContent: '',
             streamingSql: null,
+            ...(finalChart != null && { chartData: finalChart }),
           }))
+          updateTitleIfFirst()
         },
         onError: (message) => {
           const errorMsg: Message = {
@@ -106,6 +127,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             streamingContent: '',
             streamingSql: null,
           }))
+          updateTitleIfFirst()
         },
       })
     } catch (err) {
@@ -122,6 +144,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
         streamingContent: '',
         streamingSql: null,
       }))
+      if (isFirstMessage) {
+        useSessionStore.getState().updateSessionTitle(sessionId, toSessionTitle(content))
+      }
     }
   },
 

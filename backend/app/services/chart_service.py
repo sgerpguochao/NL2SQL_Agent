@@ -77,16 +77,29 @@ def generate_chart(
         # 从回复中提取 JSON
         content = response.content.strip()
 
-        # 尝试去除 markdown 代码块标记
+        # ① 去除 Qwen3 <think>...</think> 思考标签
+        content = re.sub(r"<think>[\s\S]*?</think>", "", content).strip()
+
+        # ② 去除 markdown 代码块标记
         if content.startswith("```"):
             content = re.sub(r"^```(?:json)?\s*\n?", "", content)
             content = re.sub(r"\n?```\s*$", "", content)
+
+        # ③ 兜底提取：从第一个 { 到最后一个 } 之间的内容
+        if not content.startswith("{"):
+            start = content.find("{")
+            end = content.rfind("}")
+            if start != -1 and end != -1 and end > start:
+                content = content[start:end + 1]
 
         chart_data = json.loads(content)
 
         # 校验必要字段
         if "chartType" not in chart_data:
             chart_data["chartType"] = "table"
+
+        print(f"[ChartService] 成功生成图表: type={chart_data.get('chartType')}, "
+              f"hasEchartsOption={'echartsOption' in chart_data and chart_data['echartsOption'] is not None}")
 
         return {
             "chart_type": chart_data.get("chartType", "table"),
@@ -95,6 +108,7 @@ def generate_chart(
         }
 
     except (json.JSONDecodeError, Exception) as e:
+        print(f"[ChartService] 解析失败，降级为表格: {e}")
         # 降级：解析失败返回纯表格
         return _fallback_table(query_result, str(e))
 

@@ -45,7 +45,7 @@ export function SchemaExplorer({ onFillSql }: Props) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
+      <div className="flex items-center justify-center h-full" style={{ color: 'var(--tech-text-muted)' }}>
         <p className="text-sm">加载表结构中...</p>
       </div>
     )
@@ -53,9 +53,9 @@ export function SchemaExplorer({ onFillSql }: Props) {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
+      <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: 'var(--tech-text-muted)' }}>
         <p className="text-sm text-red-400">{error}</p>
-        <button onClick={loadSchema} className="text-xs text-gray-400 hover:text-gray-200 underline">
+        <button onClick={loadSchema} className="text-xs underline" style={{ color: 'var(--tech-accent)' }}>
           重试
         </button>
       </div>
@@ -74,7 +74,8 @@ export function SchemaExplorer({ onFillSql }: Props) {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleTable(table.name) }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-800 rounded-lg transition-colors group cursor-pointer"
+              className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg transition-colors group cursor-pointer"
+              style={{ border: '1px solid transparent' }}
             >
               {/* 展开箭头 */}
               <svg
@@ -91,13 +92,14 @@ export function SchemaExplorer({ onFillSql }: Props) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
 
-              <span className="text-sm text-gray-200 font-medium truncate">{table.name}</span>
-              <span className="text-xs text-gray-500 flex-shrink-0">({table.columns.length}列)</span>
+              <span className="text-sm font-medium truncate" style={{ color: 'var(--tech-text)' }}>{table.name}</span>
+              <span className="text-xs flex-shrink-0" style={{ color: 'var(--tech-text-muted)' }}>({table.columns.length}列)</span>
 
               {/* 查询按钮 */}
               <button
                 onClick={(e) => handleQueryTable(table.name, e)}
-                className="ml-auto opacity-0 group-hover:opacity-100 text-xs text-gray-400 hover:text-gray-200 px-1.5 py-0.5 rounded bg-gray-700 hover:bg-gray-600 transition-all flex-shrink-0"
+                className="ml-auto opacity-0 group-hover:opacity-100 text-xs px-1.5 py-0.5 rounded transition-all flex-shrink-0"
+                style={{ color: 'var(--tech-accent)' }}
                 title={`查询 ${table.name}`}
               >
                 SELECT
@@ -117,7 +119,7 @@ export function SchemaExplorer({ onFillSql }: Props) {
                   </thead>
                   <tbody>
                     {table.columns.map((col) => (
-                      <tr key={col.name} className="text-gray-300 hover:bg-gray-800/50">
+                      <tr key={col.name} data-schema-row className="text-gray-300">
                         <td className="py-1 px-2 font-mono">
                           {col.primary_key && (
                             <span className="text-yellow-500 mr-1" title="主键">PK</span>

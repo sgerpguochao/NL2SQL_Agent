@@ -72,35 +72,44 @@ export function SqlEditor({ prefillSql, onPrefillConsumed }: Props) {
           onChange={(e) => setSql(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="输入 SQL 查询语句（仅支持 SELECT）..."
-          rows={3}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs font-mono text-gray-200 placeholder-gray-500 resize-none outline-none focus:border-gray-500 transition-colors"
+          rows={6}
+          className="w-full rounded-lg px-3 py-2 text-xs font-mono placeholder-gray-500 resize-none outline-none transition-colors focus:ring-1 focus:ring-cyan-500/50"
+          style={{
+            backgroundColor: 'var(--tech-bg-card)',
+            border: '1px solid var(--tech-border)',
+            color: 'var(--tech-text)',
+          }}
         />
         <div className="flex items-center gap-2 mt-1.5">
           <button
             onClick={() => executeQuery()}
             disabled={!sql.trim() || loading}
             className={`px-3 py-1 text-xs rounded-md transition-colors ${
-              sql.trim() && !loading
-                ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-                : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+              sql.trim() && !loading ? '' : 'cursor-not-allowed'
             }`}
+            style={
+              sql.trim() && !loading
+                ? { backgroundColor: 'var(--tech-accent)', color: '#fff' }
+                : { backgroundColor: 'var(--tech-bg-elevated)', color: 'var(--tech-text-muted)' }
+            }
           >
             {loading ? '执行中...' : '执行查询'}
           </button>
           <button
             onClick={handleClear}
-            className="px-3 py-1 text-xs rounded-md text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+            className="px-3 py-1 text-xs rounded-md transition-colors"
+            style={{ color: 'var(--tech-text-muted)' }}
           >
             清空
           </button>
-          <span className="ml-auto text-xs text-gray-600">Ctrl+Enter 执行</span>
+          <span className="ml-auto text-xs" style={{ color: 'var(--tech-text-muted)' }}>Ctrl+Enter 执行</span>
         </div>
       </div>
 
       {/* 结果区域 */}
       <div className="flex-1 min-h-0 mt-1">
         {error && (
-          <div className="mx-3 mb-2 px-3 py-2 bg-red-900/30 border border-red-800/50 rounded-lg text-xs text-red-300">
+          <div className="mx-3 mb-2 px-3 py-2 rounded-lg text-xs text-red-300" style={{ backgroundColor: 'rgba(220, 38, 38, 0.15)', border: '1px solid rgba(220, 38, 38, 0.4)' }}>
             {error}
           </div>
         )}

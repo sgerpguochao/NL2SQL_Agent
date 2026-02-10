@@ -35,8 +35,14 @@ export function ChatInput() {
   }
 
   return (
-    <div className="px-6 py-4 border-t border-gray-700/50 bg-gray-900">
-      <div className="flex items-end gap-3 bg-gray-800 rounded-xl px-4 py-3">
+    <div
+      className="px-6 py-4 border-t rounded-xl"
+      style={{ borderColor: 'var(--tech-border)', backgroundColor: 'var(--tech-bg-panel)' }}
+    >
+      <div
+        className="flex items-end gap-3 rounded-xl px-4 py-3"
+        style={{ backgroundColor: 'var(--tech-bg-card)', border: '1px solid var(--tech-border)' }}
+      >
         <textarea
           ref={textareaRef}
           value={input}
@@ -52,9 +58,14 @@ export function ChatInput() {
           disabled={!input.trim() || isStreaming}
           className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
             input.trim() && !isStreaming
-              ? 'bg-gray-600 hover:bg-gray-500 text-white'
-              : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              ? 'text-white'
+              : 'cursor-not-allowed'
           }`}
+          style={
+            input.trim() && !isStreaming
+              ? { backgroundColor: 'var(--tech-accent)' }
+              : { backgroundColor: 'var(--tech-bg-elevated)', color: 'var(--tech-text-muted)' }
+          }
         >
           {isStreaming ? (
             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

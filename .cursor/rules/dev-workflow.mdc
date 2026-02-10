@@ -10,7 +10,7 @@ project:
   team: "智能数据分析"
   repo: "https://github.com/sgerpguochao/NL2SQL_Agent.git"
   github_username: "sgerpguochao"
-  github_token: ""  # 请在本地填入你的 GitHub Personal Access Token
+  github_token: "YOUR_GITHUB_TOKEN"  # 请在本地填入你的 GitHub Personal Access Token，勿提交到仓库
   default_branch: "main"
   branch_prefix: "feat"
   plan_file: ".cursor/plans/nl2sql_analysis_system_5bb4d91a.plan.md"

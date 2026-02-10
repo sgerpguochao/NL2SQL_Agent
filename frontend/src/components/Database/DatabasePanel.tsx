@@ -26,17 +26,23 @@ export function DatabasePanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Tab 栏 */}
-      <div className="flex-shrink-0 px-3 pt-2 pb-1 bg-gray-900 border-b border-gray-700/50">
+      <div
+        className="flex-shrink-0 px-3 pt-2 pb-1 border-b"
+        style={{ backgroundColor: 'var(--tech-bg-panel)', borderColor: 'var(--tech-border)' }}
+      >
         <div className="flex gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-gray-700 text-gray-100 font-medium'
-                  : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+                activeTab === tab.id ? 'font-medium' : ''
               }`}
+              style={
+                activeTab === tab.id
+                  ? { backgroundColor: 'var(--tech-accent)', color: '#fff' }
+                  : { color: 'var(--tech-text-muted)' }
+              }
             >
               {tab.label}
             </button>

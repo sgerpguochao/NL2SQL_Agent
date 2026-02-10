@@ -21,7 +21,7 @@ import type { Session, ChartData, TableSchema, SqlQueryResult } from '../types'
 
 const api = axios.create({
   baseURL: '/api',
-  timeout: 10_000,
+  timeout: 60_000, // 60s，避免冷启动或慢请求（会话/数据库/LLM）触发超时
   headers: { 'Content-Type': 'application/json' },
 })
 

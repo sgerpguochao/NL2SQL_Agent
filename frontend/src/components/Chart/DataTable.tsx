@@ -6,7 +6,7 @@ interface Props {
 
 export function DataTable({ data }: Props) {
   if (!data.columns.length || !data.rows.length) {
-    return <p className="text-sm text-gray-500 text-center py-4">暂无数据</p>
+    return <p className="text-sm text-center py-4" style={{ color: 'var(--tech-text-muted)' }}>暂无数据</p>
   }
 
   return (
@@ -17,7 +17,8 @@ export function DataTable({ data }: Props) {
             {data.columns.map((col, i) => (
               <th
                 key={i}
-                className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-700 border-b border-gray-600 first:rounded-tl-lg last:rounded-tr-lg"
+                className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider first:rounded-tl-lg last:rounded-tr-lg"
+                style={{ color: 'var(--tech-text-muted)', backgroundColor: 'var(--tech-bg-elevated)', borderBottom: '1px solid var(--tech-border)' }}
               >
                 {col}
               </th>
@@ -28,12 +29,14 @@ export function DataTable({ data }: Props) {
           {data.rows.map((row, ri) => (
             <tr
               key={ri}
-              className={`border-b border-gray-700/50 transition-colors hover:bg-gray-700/40 ${
-                ri % 2 === 0 ? 'bg-gray-800' : 'bg-gray-800/60'
-              }`}
+              className="border-b transition-colors"
+              style={{
+                borderColor: 'var(--tech-border)',
+                backgroundColor: ri % 2 === 0 ? 'var(--tech-bg-card)' : 'var(--tech-bg-elevated)',
+              }}
             >
               {row.map((cell, ci) => (
-                <td key={ci} className="px-4 py-2.5 text-gray-300 whitespace-nowrap">
+                <td key={ci} className="px-4 py-2.5 whitespace-nowrap" style={{ color: 'var(--tech-text)' }}>
                   {typeof cell === 'number' ? cell.toLocaleString('zh-CN') : cell}
                 </td>
               ))}
@@ -41,7 +44,7 @@ export function DataTable({ data }: Props) {
           ))}
         </tbody>
       </table>
-      <div className="mt-2 text-xs text-gray-500 text-right">
+      <div className="mt-2 text-xs text-right" style={{ color: 'var(--tech-text-muted)' }}>
         共 {data.rows.length} 条记录
       </div>
     </div>

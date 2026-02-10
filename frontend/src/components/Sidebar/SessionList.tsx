@@ -39,15 +39,26 @@ export function Sidebar() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-4 border-b border-gray-800">
-        <h1 className="text-lg font-semibold tracking-wide text-gray-100">NL2SQL</h1>
-        <p className="text-xs text-gray-500 mt-0.5">智能数据分析助手</p>
+      <div
+        className="px-4 py-4 border-b flex items-center gap-3"
+        style={{ borderColor: 'var(--tech-border)' }}
+      >
+        <img
+          src="/school-logo.png"
+          alt="人工智能学院"
+          className="w-9 h-9 rounded-lg object-contain flex-shrink-0 bg-white/10"
+        />
+        <div className="min-w-0">
+          <h1 className="text-sm font-semibold tracking-wide truncate" style={{ color: 'var(--tech-text)' }}>人工智能学院</h1>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--tech-text-muted)' }}>智能数据分析助手</p>
+        </div>
       </div>
 
       <div className="px-3 py-3">
         <button
           onClick={handleCreate}
-          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-700 hover:bg-gray-800 transition-colors text-sm text-gray-300"
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border transition-colors text-sm hover:border-cyan-500/40"
+          style={{ borderColor: 'var(--tech-border)', color: 'var(--tech-text)' }}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -58,9 +69,9 @@ export function Sidebar() {
 
       <div className="flex-1 overflow-y-auto px-2 space-y-0.5">
         {loading && sessions.length === 0 ? (
-          <p className="text-center text-gray-600 text-sm mt-8">加载中...</p>
+          <p className="text-center text-sm mt-8" style={{ color: 'var(--tech-text-muted)' }}>加载中...</p>
         ) : sessions.length === 0 ? (
-          <p className="text-center text-gray-600 text-sm mt-8">暂无会话，点击上方按钮创建</p>
+          <p className="text-center text-sm mt-8" style={{ color: 'var(--tech-text-muted)' }}>暂无会话，点击上方按钮创建</p>
         ) : (
           sessions.map((session) => (
             <SessionItem

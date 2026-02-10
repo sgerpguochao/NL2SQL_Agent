@@ -2,25 +2,28 @@ import ReactECharts from 'echarts-for-react'
 
 interface Props {
   option: Record<string, unknown>
+  /** 图表高度，默认 350px */
+  height?: number | string
 }
 
-/** 深色主题下的 ECharts 全局默认配置 */
+/** 科技感深色主题 ECharts 配置 */
 const darkThemeDefaults = {
   backgroundColor: 'transparent',
-  textStyle: { color: '#9ca3af' },
-  legend: { textStyle: { color: '#9ca3af' } },
-  xAxis: { axisLine: { lineStyle: { color: '#4b5563' } }, axisLabel: { color: '#9ca3af' }, splitLine: { lineStyle: { color: '#374151' } } },
-  yAxis: { axisLine: { lineStyle: { color: '#4b5563' } }, axisLabel: { color: '#9ca3af' }, splitLine: { lineStyle: { color: '#374151' } } },
+  textStyle: { color: '#94a3b8' },
+  legend: { textStyle: { color: '#94a3b8' } },
+  xAxis: { axisLine: { lineStyle: { color: 'rgba(6, 182, 212, 0.3)' } }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(6, 182, 212, 0.08)' } } },
+  yAxis: { axisLine: { lineStyle: { color: 'rgba(6, 182, 212, 0.3)' } }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(6, 182, 212, 0.08)' } } },
 }
 
-export function DynamicChart({ option }: Props) {
+export function DynamicChart({ option, height = '350px' }: Props) {
   // 合并深色主题默认配置
   const mergedOption = { ...darkThemeDefaults, ...option }
+  const h = typeof height === 'number' ? `${height}px` : height
 
   return (
     <ReactECharts
       option={mergedOption}
-      style={{ height: '350px', width: '100%' }}
+      style={{ height: h, width: '100%' }}
       opts={{ renderer: 'canvas' }}
       notMerge={true}
       lazyUpdate={true}

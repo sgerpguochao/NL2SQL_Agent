@@ -20,7 +20,8 @@ export function QueryResult({ result, onPageChange }: Props) {
               {result.columns.map((col, i) => (
                 <th
                   key={i}
-                  className="px-3 py-2 text-left font-semibold text-gray-400 uppercase tracking-wider bg-gray-700 border-b border-gray-600 whitespace-nowrap"
+                  className="px-3 py-2 text-left font-semibold uppercase tracking-wider whitespace-nowrap"
+                style={{ color: 'var(--tech-text-muted)', backgroundColor: 'var(--tech-bg-elevated)', borderBottom: '1px solid var(--tech-border)' }}
                 >
                   {col}
                 </th>
@@ -31,14 +32,16 @@ export function QueryResult({ result, onPageChange }: Props) {
             {result.rows.map((row, ri) => (
               <tr
                 key={ri}
-                className={`border-b border-gray-700/50 transition-colors hover:bg-gray-700/40 ${
-                  ri % 2 === 0 ? 'bg-gray-800' : 'bg-gray-800/60'
-                }`}
+                className="border-b transition-colors"
+                style={{
+                  borderColor: 'var(--tech-border)',
+                  backgroundColor: ri % 2 === 0 ? 'var(--tech-bg-card)' : 'var(--tech-bg-elevated)',
+                }}
               >
                 {row.map((cell, ci) => (
-                  <td key={ci} className="px-3 py-1.5 text-gray-300 whitespace-nowrap">
+                  <td key={ci} className="px-3 py-1.5 whitespace-nowrap" style={{ color: 'var(--tech-text)' }}>
                     {cell === null ? (
-                      <span className="text-gray-600 italic">NULL</span>
+                      <span className="italic" style={{ color: 'var(--tech-text-muted)' }}>NULL</span>
                     ) : typeof cell === 'number' ? (
                       cell.toLocaleString('zh-CN')
                     ) : (
@@ -53,7 +56,10 @@ export function QueryResult({ result, onPageChange }: Props) {
       </div>
 
       {/* 分页栏 */}
-      <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t border-gray-700/50 bg-gray-900 text-xs text-gray-400">
+      <div
+        className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t text-xs"
+        style={{ borderColor: 'var(--tech-border)', backgroundColor: 'var(--tech-bg-panel)', color: 'var(--tech-text-muted)' }}
+      >
         <span>
           共 {result.total_count.toLocaleString()} 条，每页 {result.page_size} 条，耗时 {result.elapsed_ms}ms
         </span>
@@ -63,24 +69,30 @@ export function QueryResult({ result, onPageChange }: Props) {
             onClick={() => onPageChange(result.page - 1)}
             disabled={result.page <= 1}
             className={`px-2 py-1 rounded transition-colors ${
-              result.page <= 1
-                ? 'text-gray-600 cursor-not-allowed'
-                : 'text-gray-300 hover:bg-gray-700'
+              result.page <= 1 ? 'cursor-not-allowed' : ''
             }`}
+            style={
+              result.page <= 1
+                ? { color: 'var(--tech-text-muted)' }
+                : { color: 'var(--tech-text)' }
+            }
           >
             上一页
           </button>
-          <span className="text-gray-300">
+          <span style={{ color: 'var(--tech-text)' }}>
             {result.page} / {result.total_pages}
           </span>
           <button
             onClick={() => onPageChange(result.page + 1)}
             disabled={result.page >= result.total_pages}
             className={`px-2 py-1 rounded transition-colors ${
-              result.page >= result.total_pages
-                ? 'text-gray-600 cursor-not-allowed'
-                : 'text-gray-300 hover:bg-gray-700'
+              result.page >= result.total_pages ? 'cursor-not-allowed' : ''
             }`}
+            style={
+              result.page >= result.total_pages
+                ? { color: 'var(--tech-text-muted)' }
+                : { color: 'var(--tech-text)' }
+            }
           >
             下一页
           </button>

@@ -21,10 +21,13 @@ export function SessionItem({ session, isActive, onSelect, onDelete }: Props) {
   return (
     <div
       className={`group flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
-        isActive
-          ? 'bg-gray-800 text-gray-100'
-          : 'text-gray-400 hover:bg-gray-800/60 hover:text-gray-200'
+        !isActive ? 'hover:bg-[var(--tech-bg-elevated)]/50' : ''
       }`}
+      style={{
+        backgroundColor: isActive ? 'var(--tech-bg-elevated)' : 'transparent',
+        color: isActive ? 'var(--tech-text)' : 'var(--tech-text-muted)',
+        border: isActive ? '1px solid var(--tech-border)' : '1px solid transparent',
+      }}
       onClick={onSelect}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
@@ -42,7 +45,7 @@ export function SessionItem({ session, isActive, onSelect, onDelete }: Props) {
       {/* 标题 + 时间 */}
       <div className="flex-1 min-w-0">
         <p className="text-sm truncate">{session.title}</p>
-        <p className="text-xs text-gray-600 mt-0.5">{timeStr}</p>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--tech-text-muted)' }}>{timeStr}</p>
       </div>
 
       {/* 删除按钮 */}
