@@ -84,7 +84,12 @@ def delete_session(session_id: str) -> bool:
     return False
 
 
-def add_message(session_id: str, role: str, content: str) -> Optional[dict]:
+def add_message(
+    session_id: str,
+    role: str,
+    content: str,
+    thinking_process: Optional[str] = None,
+) -> Optional[dict]:
     """
     向会话添加一条消息
 
@@ -92,6 +97,7 @@ def add_message(session_id: str, role: str, content: str) -> Optional[dict]:
         session_id: 会话 ID
         role: 消息角色 (user / assistant)
         content: 消息内容
+        thinking_process: 可选，AI 思考过程（用户问题+推理步骤+回答）
 
     Returns:
         消息字典，会话不存在时返回 None
@@ -100,11 +106,13 @@ def add_message(session_id: str, role: str, content: str) -> Optional[dict]:
     if session is None:
         return None
 
-    message = {
+    message: dict = {
         "role": role,
         "content": content,
         "timestamp": datetime.now().isoformat(),
     }
+    if thinking_process is not None:
+        message["thinking_process"] = thinking_process
 
     session["messages"].append(message)
     session["updated_at"] = datetime.now().isoformat()

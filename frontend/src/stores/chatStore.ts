@@ -25,6 +25,7 @@ interface ChatState {
   isStreaming: boolean
   streamingContent: string
   streamingSql: string | null
+  streamingThinking: string
   chartData: ChartData | null
 
   sendMessage: (sessionId: string, content: string) => Promise<void>
@@ -42,6 +43,7 @@ function toFrontendMessage(msg: BackendMessage, sessionId: string, index: number
     role: msg.role as 'user' | 'assistant',
     content: msg.content,
     timestamp: msg.timestamp,
+    thinking_process: msg.thinking_process ?? null,
   }
 }
 
@@ -50,6 +52,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isStreaming: false,
   streamingContent: '',
   streamingSql: null,
+  streamingThinking: '',
   chartData: null,
 
   sendMessage: async (sessionId, content) => {
@@ -67,11 +70,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isStreaming: true,
       streamingContent: '',
       streamingSql: null,
+      streamingThinking: '',
       chartData: null, // 清空上一次图表，避免残留到新的流式气泡
     }))
 
     let finalContent = ''
     let finalSql: string | null = null
+    let finalThinking = ''
     let finalChart: ChartData | null = null
 
     const updateTitleIfFirst = () => {
@@ -90,6 +95,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
           finalSql = sql
           set({ streamingSql: sql })
         },
+        onThinking: (content) => {
+          finalThinking = content
+          set({ streamingThinking: content })
+        },
         onChart: (chartData) => {
           finalChart = chartData
           set({ chartData })
@@ -102,6 +111,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             content: finalContent || '（未获取到回复）',
             timestamp: new Date().toISOString(),
             sql: finalSql,
+            thinking_process: finalThinking || null,
             chart_data: finalChart,
           }
           set((state) => ({
@@ -109,6 +119,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             isStreaming: false,
             streamingContent: '',
             streamingSql: null,
+            streamingThinking: '',
             ...(finalChart != null && { chartData: finalChart }),
           }))
           updateTitleIfFirst()
@@ -126,6 +137,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             isStreaming: false,
             streamingContent: '',
             streamingSql: null,
+            streamingThinking: '',
           }))
           updateTitleIfFirst()
         },
@@ -143,6 +155,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         isStreaming: false,
         streamingContent: '',
         streamingSql: null,
+        streamingThinking: '',
       }))
       if (isFirstMessage) {
         useSessionStore.getState().updateSessionTitle(sessionId, toSessionTitle(content))
@@ -152,13 +165,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setChartData: (data) => set({ chartData: data }),
 
-  clearMessages: () => set({ messages: [], chartData: null, streamingContent: '', streamingSql: null }),
+  clearMessages: () => set({ messages: [], chartData: null, streamingContent: '', streamingSql: null, streamingThinking: '' }),
 
   loadSessionMessages: async (sessionId) => {
     try {
       const detail = await getSessionDetailApi(sessionId)
       const messages = detail.messages.map((msg, i) => toFrontendMessage(msg, sessionId, i))
-      set({ messages, chartData: null, streamingContent: '', streamingSql: null })
+      set({ messages, chartData: null, streamingContent: '', streamingSql: null, streamingThinking: '' })
     } catch (err) {
       console.error('[ChatStore] loadSessionMessages failed:', err)
       set({ messages: [], chartData: null })

@@ -42,6 +42,7 @@ export interface BackendMessage {
   role: string
   content: string
   timestamp: string
+  thinking_process?: string | null
 }
 
 export interface SessionDetail extends Session {
@@ -103,10 +104,12 @@ export async function executeSqlApi(
 
 /** SSE 事件回调 */
 export interface SSECallbacks {
-  /** 收到文本片段 */
+  /** 收到文本片段（仅最终回答） */
   onToken: (content: string) => void
   /** 收到 SQL 语句 */
   onSql: (sql: string) => void
+  /** 收到思考过程（用户问题+推理步骤+回答，追加累积） */
+  onThinking: (content: string) => void
   /** 收到图表配置 */
   onChart: (chartData: ChartData) => void
   /** 流结束 */
@@ -176,6 +179,11 @@ export async function sendChatMessageApi(
           case 'sql':
             if (parsed.sql) {
               callbacks.onSql(parsed.sql)
+            }
+            break
+          case 'thinking':
+            if (parsed.content) {
+              callbacks.onThinking(parsed.content)
             }
             break
           case 'chart':

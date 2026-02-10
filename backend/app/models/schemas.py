@@ -24,6 +24,7 @@ class MessageItem(BaseModel):
     role: str = Field(..., description="消息角色: user / assistant")
     content: str = Field(..., description="消息内容")
     timestamp: str = Field(..., description="时间戳")
+    thinking_process: Optional[str] = Field(default=None, description="AI 思考过程（用户问题+推理+回答）")
 
 
 class SessionResponse(BaseModel):

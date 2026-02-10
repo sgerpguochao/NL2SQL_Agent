@@ -19,6 +19,8 @@ export interface Message {
   timestamp: string    // ISO-8601 字符串
   /** Agent 执行的 SQL（来自 SSE sql 事件） */
   sql?: string | null
+  /** AI 思考过程：用户问题 + 推理步骤 + 回答（来自 SSE thinking 事件） */
+  thinking_process?: string | null
   /** AI 回复可能附带图表数据（来自 SSE chart 事件） */
   chart_data?: ChartData | null
 }

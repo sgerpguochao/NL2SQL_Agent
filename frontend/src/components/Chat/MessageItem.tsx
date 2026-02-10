@@ -38,13 +38,19 @@ export function MessageItem({ message }: Props) {
           border: '1px solid var(--tech-border)',
         }}
       >
-        {message.sql && !isUser && (
+        {!isUser && (message.thinking_process || message.sql) && (
           <div className="mb-2">
-            <CollapsibleProcess title="中间过程">
-              <div className="font-mono text-gray-300 overflow-x-auto whitespace-pre">
-                <span className="text-gray-500">SQL: </span>
-                {message.sql}
-              </div>
+            <CollapsibleProcess title="中间过程" defaultExpanded={false}>
+              {message.thinking_process ? (
+                <div className="text-sm whitespace-pre-wrap" style={{ color: 'var(--tech-text-muted)' }}>
+                  <MarkdownContent content={message.thinking_process} />
+                </div>
+              ) : (
+                <div className="font-mono text-gray-300 overflow-x-auto whitespace-pre">
+                  <span className="text-gray-500">SQL: </span>
+                  {message.sql}
+                </div>
+              )}
             </CollapsibleProcess>
           </div>
         )}

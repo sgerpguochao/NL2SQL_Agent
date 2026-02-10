@@ -1,6 +1,6 @@
 """
 聊天接口 - SSE 流式推送
-事件类型：token / sql / chart / done / error
+事件类型：token / sql / thinking / chart / done / error
 基于 playground/test_nl2sql.py 实测的 Agent stream_mode="updates" 接口
 """
 
@@ -17,10 +17,31 @@ from app.services.chart_service import generate_chart
 
 router = APIRouter(prefix="/api/chat", tags=["聊天"])
 
+# 工具名 -> 中文描述（用于思考过程展示）
+_TOOL_NAMES = {
+    "sql_db_list_tables": "查询表列表",
+    "sql_db_schema": "获取表结构",
+    "sql_db_query_checker": "校验 SQL 语法",
+    "sql_db_query": "执行 SQL 查询",
+}
+
 
 def _format_sse(event: str, data: str) -> str:
     """格式化 SSE 事件"""
     return f"event: {event}\ndata: {data}\n\n"
+
+
+def _summary_tool_result(name: str, content: str) -> str:
+    """工具结果摘要，避免过长"""
+    if name == "sql_db_list_tables":
+        return content.strip()[:120] + ("..." if len(content) > 120 else "")
+    if name == "sql_db_schema":
+        return "已获取表结构"
+    if name == "sql_db_query_checker":
+        return "校验通过" if "正确" in content or "正确" in content else content[:80]
+    if name == "sql_db_query":
+        return "查询完成"
+    return content[:100] + ("..." if len(content) > 100 else "")
 
 
 async def _stream_agent_response(
@@ -31,9 +52,10 @@ async def _stream_agent_response(
     执行 Agent 并流式推送结果
 
     SSE 事件流：
-    - event: token   -> data: {"content": "文本片段"}
+    - event: token   -> data: {"content": "文本片段"} 仅最终回答
     - event: sql     -> data: {"sql": "SELECT..."}
-    - event: chart   -> data: {"chart_type": "bar", "echarts_option": {...}, "table_data": {...}}
+    - event: thinking -> data: {"content": "完整思考过程"} 用户问题+思考步骤，追加累积
+    - event: chart   -> data: {"chart_type": "bar", ...}
     - event: done    -> data: {}
     - event: error   -> data: {"message": "错误描述"}
     """
@@ -41,12 +63,17 @@ async def _stream_agent_response(
         agent = get_agent()
         thread_config = {"configurable": {"thread_id": session_id}}
 
-        # 记录 Agent 执行的 SQL 和查询结果（用于图表生成）
         executed_sql = None
         query_result = None
         final_answer = ""
+        thinking_lines: list[str] = []
 
-        # 使用 stream_mode="updates" 获取逐步事件
+        # 初始化：用户问题
+        thinking_lines.append(f"**用户问题**：{message}")
+        yield _format_sse("thinking", json.dumps(
+            {"content": "\n\n".join(thinking_lines)}, ensure_ascii=False
+        ))
+
         for event in agent.stream(
             {"messages": [{"role": "user", "content": message}]},
             config=thread_config,
@@ -59,38 +86,45 @@ async def _stream_agent_response(
                 for msg in node_data["messages"]:
                     msg_type = type(msg).__name__
 
-                    # model 节点：AIMessage
                     if node_name == "model" and msg_type == "AIMessage":
-                        # 检查是否有 tool_calls
                         if hasattr(msg, "tool_calls") and msg.tool_calls:
+                            # 中间思考：追加 AI 的 reasoning
+                            if msg.content:
+                                thinking_lines.append(f"**思考**：{msg.content.strip()}")
+                                yield _format_sse("thinking", json.dumps(
+                                    {"content": "\n\n".join(thinking_lines)}, ensure_ascii=False
+                                ))
+                            # 记录 SQL 并发送 sql 事件
                             for tc in msg.tool_calls:
-                                # 记录 sql_db_query 的 SQL
                                 if tc.get("name") == "sql_db_query":
                                     executed_sql = tc["args"].get("query", "")
                                     yield _format_sse("sql", json.dumps(
                                         {"sql": executed_sql}, ensure_ascii=False
                                     ))
-
-                            # 如果有 content 且同时有 tool_calls，这是中间思考
-                            if msg.content:
-                                yield _format_sse("token", json.dumps(
-                                    {"content": msg.content}, ensure_ascii=False
-                                ))
                         else:
-                            # 无 tool_calls -> 这是最终回答
+                            # 最终回答：仅发 token，不发 thinking
                             if msg.content:
                                 final_answer = msg.content
                                 yield _format_sse("token", json.dumps(
                                     {"content": msg.content}, ensure_ascii=False
                                 ))
+                            thinking_lines.append(f"**最终回答**：\n{msg.content.strip()}")
+                            yield _format_sse("thinking", json.dumps(
+                                {"content": "\n\n".join(thinking_lines)}, ensure_ascii=False
+                            ))
 
-                    # tools 节点：ToolMessage
                     elif node_name == "tools" and msg_type == "ToolMessage":
-                        # 记录 sql_db_query 的查询结果
-                        if hasattr(msg, "name") and msg.name == "sql_db_query":
-                            query_result = msg.content
+                        if hasattr(msg, "name"):
+                            tool_name = msg.name
+                            desc = _TOOL_NAMES.get(tool_name, tool_name)
+                            summary = _summary_tool_result(tool_name, msg.content or "")
+                            thinking_lines.append(f"**{desc}**：{summary}")
+                            yield _format_sse("thinking", json.dumps(
+                                {"content": "\n\n".join(thinking_lines)}, ensure_ascii=False
+                            ))
+                            if tool_name == "sql_db_query":
+                                query_result = msg.content
 
-            # 让出控制权，避免阻塞事件循环
             await asyncio.sleep(0)
 
         # Agent 执行完毕后，生成图表
@@ -116,7 +150,10 @@ async def _stream_agent_response(
         # 保存消息到会话
         session_service.add_message(session_id, "user", message)
         if final_answer:
-            session_service.add_message(session_id, "assistant", final_answer)
+            thinking_content = "\n\n".join(thinking_lines) if thinking_lines else None
+            session_service.add_message(
+                session_id, "assistant", final_answer, thinking_process=thinking_content
+            )
 
         # 发送完成事件
         yield _format_sse("done", "{}")

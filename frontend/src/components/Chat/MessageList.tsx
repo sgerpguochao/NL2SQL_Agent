@@ -10,7 +10,7 @@ export function MessageList() {
   const messages = useChatStore((s) => s.messages)
   const isStreaming = useChatStore((s) => s.isStreaming)
   const streamingContent = useChatStore((s) => s.streamingContent)
-  const streamingSql = useChatStore((s) => s.streamingSql)
+  const streamingThinking = useChatStore((s) => s.streamingThinking)
   const chartData = useChatStore((s) => s.chartData)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -47,9 +47,8 @@ export function MessageList() {
                 className="max-w-[75%] rounded-2xl rounded-tl-sm px-4 py-3 space-y-2"
                 style={{ backgroundColor: 'var(--tech-bg-card)', color: 'var(--tech-text)', border: '1px solid var(--tech-border)' }}
               >
-                {(streamingSql || !streamingContent) && (
-                  <CollapsibleProcess title="中间过程">
-                    {!streamingContent && (
+                <CollapsibleProcess title="中间过程" defaultExpanded>
+                    {!streamingThinking ? (
                       <div className="flex items-center gap-2 text-gray-500">
                         <div className="flex gap-1">
                           <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -58,15 +57,12 @@ export function MessageList() {
                         </div>
                         <span className="text-xs">AI 正在思考中...</span>
                       </div>
-                    )}
-                    {streamingSql && (
-                      <div className="font-mono text-gray-300 overflow-x-auto whitespace-pre mt-1">
-                        <span className="text-gray-500">SQL: </span>
-                        {streamingSql}
+                    ) : (
+                      <div className="text-sm whitespace-pre-wrap" style={{ color: 'var(--tech-text-muted)' }}>
+                        <MarkdownContent content={streamingThinking} />
                       </div>
                     )}
                   </CollapsibleProcess>
-                )}
                 {streamingContent && (
                   <div className="relative">
                     <MarkdownContent content={streamingContent} />
