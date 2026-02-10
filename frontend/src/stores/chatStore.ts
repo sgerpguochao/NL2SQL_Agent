@@ -28,7 +28,8 @@ interface ChatState {
   streamingThinking: string
   chartData: ChartData | null
 
-  sendMessage: (sessionId: string, content: string) => Promise<void>
+  /** 发送消息，connectionId 为当前活动的 MySQL 连接 ID */
+  sendMessage: (sessionId: string, content: string, connectionId: string) => Promise<void>
   setChartData: (data: ChartData | null) => void
   clearMessages: () => void
   loadSessionMessages: (sessionId: string) => Promise<void>
@@ -55,7 +56,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   streamingThinking: '',
   chartData: null,
 
-  sendMessage: async (sessionId, content) => {
+  sendMessage: async (sessionId, content, connectionId) => {
     const isFirstMessage = get().messages.length === 0
 
     const userMsg: Message = {
@@ -86,7 +87,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
 
     try {
-      await sendChatMessageApi(sessionId, content, {
+      await sendChatMessageApi(sessionId, content, connectionId, {
         onToken: (text) => {
           finalContent += text
           set({ streamingContent: finalContent })

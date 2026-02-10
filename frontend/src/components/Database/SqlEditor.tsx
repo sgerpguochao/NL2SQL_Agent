@@ -7,9 +7,11 @@ interface Props {
   /** 外部传入的预填 SQL（来自 SchemaExplorer 的表名点击） */
   prefillSql: string
   onPrefillConsumed: () => void
+  /** 当前活动的 MySQL 连接 ID */
+  connectionId?: string
 }
 
-export function SqlEditor({ prefillSql, onPrefillConsumed }: Props) {
+export function SqlEditor({ prefillSql, onPrefillConsumed, connectionId }: Props) {
   const [sql, setSql] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,13 +29,13 @@ export function SqlEditor({ prefillSql, onPrefillConsumed }: Props) {
 
   const executeQuery = async (page: number = 1) => {
     const trimmed = sql.trim()
-    if (!trimmed || loading) return
+    if (!trimmed || loading || !connectionId) return
 
     setLoading(true)
     setError(null)
 
     try {
-      const data = await executeSqlApi(trimmed, page, 50)
+      const data = await executeSqlApi(connectionId, trimmed, page, 50)
       setResult(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : '查询失败')
@@ -83,17 +85,17 @@ export function SqlEditor({ prefillSql, onPrefillConsumed }: Props) {
         <div className="flex items-center gap-2 mt-1.5">
           <button
             onClick={() => executeQuery()}
-            disabled={!sql.trim() || loading}
+            disabled={!sql.trim() || loading || !connectionId}
             className={`px-3 py-1 text-xs rounded-md transition-colors ${
-              sql.trim() && !loading ? '' : 'cursor-not-allowed'
+              sql.trim() && !loading && connectionId ? '' : 'cursor-not-allowed'
             }`}
             style={
-              sql.trim() && !loading
+              sql.trim() && !loading && connectionId
                 ? { backgroundColor: 'var(--tech-accent)', color: '#fff' }
                 : { backgroundColor: 'var(--tech-bg-elevated)', color: 'var(--tech-text-muted)' }
             }
           >
-            {loading ? '执行中...' : '执行查询'}
+            {loading ? '执行中...' : !connectionId ? '请先选择连接' : '执行查询'}
           </button>
           <button
             onClick={handleClear}

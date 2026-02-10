@@ -5,23 +5,32 @@ import { fetchSchemaApi } from '../../api/client'
 interface Props {
   /** 点击表名时回调，传递预填 SQL */
   onFillSql?: (sql: string) => void
+  /** 当前活动的 MySQL 连接 ID */
+  connectionId?: string
 }
 
-export function SchemaExplorer({ onFillSql }: Props) {
+export function SchemaExplorer({ onFillSql, connectionId }: Props) {
   const [tables, setTables] = useState<TableSchema[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedTable, setExpandedTable] = useState<string | null>(null)
 
   useEffect(() => {
-    loadSchema()
-  }, [])
+    if (connectionId) {
+      loadSchema()
+    } else {
+      setTables([])
+      setLoading(false)
+      setError('请先选择数据库连接')
+    }
+  }, [connectionId])
 
   const loadSchema = async () => {
+    if (!connectionId) return
     setLoading(true)
     setError(null)
     try {
-      const { tables } = await fetchSchemaApi()
+      const { tables } = await fetchSchemaApi(connectionId)
       setTables(tables)
       // 默认展开第一张表
       if (tables.length > 0) {

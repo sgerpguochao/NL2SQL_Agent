@@ -74,3 +74,53 @@ export interface SqlQueryResult {
   total_pages: number
   elapsed_ms: number
 }
+
+// ===== MySQL 连接管理 =====
+
+/** MySQL 连接配置 —— 字段与后端 MySQLConnectionConfig 保持一致 */
+export interface MySQLConnection {
+  id: string
+  name: string
+  host: string
+  port: number
+  user: string
+  password: string
+  database: string
+}
+
+/** 创建连接请求（无 id） */
+export interface MySQLConnectionCreate {
+  name: string
+  host: string
+  port: number
+  user: string
+  password: string
+  database: string
+}
+
+/** 更新连接请求（所有字段可选） */
+export interface MySQLConnectionUpdate {
+  name?: string
+  host?: string
+  port?: number
+  user?: string
+  password?: string
+  database?: string
+}
+
+/** 连接测试请求 */
+export interface ConnectionTestRequest {
+  host: string
+  port: number
+  user: string
+  password: string
+  database: string
+}
+
+/** 连接测试结果 */
+export interface ConnectionTestResult {
+  success: boolean
+  message: string
+  mysql_version?: string | null
+  tables_count?: number | null
+}

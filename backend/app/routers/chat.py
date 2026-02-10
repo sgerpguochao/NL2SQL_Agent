@@ -1,7 +1,7 @@
 """
-聊天接口 - SSE 流式推送
+聊天接口 - SSE 流式推送（MySQL 版本 - Phase2）
 事件类型：token / sql / thinking / chart / done / error
-基于 playground/test_nl2sql.py 实测的 Agent stream_mode="updates" 接口
+基于 Agent stream_mode="updates" 接口，支持按 connection_id 指定数据库
 """
 
 import json
@@ -47,20 +47,26 @@ def _summary_tool_result(name: str, content: str) -> str:
 async def _stream_agent_response(
     session_id: str,
     message: str,
+    connection_id: str,
 ) -> AsyncGenerator[str, None]:
     """
     执行 Agent 并流式推送结果
 
+    Args:
+        session_id: 会话 ID
+        message: 用户消息
+        connection_id: MySQL 连接 ID
+
     SSE 事件流：
-    - event: token   -> data: {"content": "文本片段"} 仅最终回答
-    - event: sql     -> data: {"sql": "SELECT..."}
+    - event: token    -> data: {"content": "文本片段"} 仅最终回答
+    - event: sql      -> data: {"sql": "SELECT..."}
     - event: thinking -> data: {"content": "完整思考过程"} 用户问题+思考步骤，追加累积
-    - event: chart   -> data: {"chart_type": "bar", ...}
-    - event: done    -> data: {}
-    - event: error   -> data: {"message": "错误描述"}
+    - event: chart    -> data: {"chart_type": "bar", ...}
+    - event: done     -> data: {}
+    - event: error    -> data: {"message": "错误描述"}
     """
     try:
-        agent = get_agent()
+        agent = get_agent(connection_id)
         thread_config = {"configurable": {"thread_id": session_id}}
 
         executed_sql = None
@@ -158,6 +164,12 @@ async def _stream_agent_response(
         # 发送完成事件
         yield _format_sse("done", "{}")
 
+    except ValueError as e:
+        # 连接不存在等业务错误
+        yield _format_sse("error", json.dumps(
+            {"message": str(e)}, ensure_ascii=False
+        ))
+        yield _format_sse("done", "{}")
     except Exception as e:
         yield _format_sse("error", json.dumps(
             {"message": f"处理失败: {str(e)}"}, ensure_ascii=False
@@ -173,6 +185,7 @@ async def chat_stream(session_id: str, body: ChatRequest):
     通过 SSE 推送以下事件：
     - token: 流式文本片段
     - sql: Agent 执行的 SQL 语句
+    - thinking: 思考过程（累积）
     - chart: 图表配置（含 ECharts option 和表格数据）
     - done: 流结束标记
     - error: 错误信息
@@ -183,7 +196,7 @@ async def chat_stream(session_id: str, body: ChatRequest):
         raise HTTPException(status_code=404, detail="会话不存在")
 
     return StreamingResponse(
-        _stream_agent_response(session_id, body.message),
+        _stream_agent_response(session_id, body.message, body.connection_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

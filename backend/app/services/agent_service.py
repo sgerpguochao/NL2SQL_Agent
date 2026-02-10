@@ -1,26 +1,28 @@
 """
-SQL Agent 服务层
-基于 LangChain v1 create_agent + SQLDatabaseToolkit + InMemorySaver
-基于 playground/test_nl2sql.py 实测验证
+SQL Agent 服务层（MySQL 版本 - Phase2）
+基于 LangChain create_agent + SQLDatabaseToolkit + InMemorySaver
+按 connection_id 管理独立的 Agent 实例和 Checkpointer
 """
+
+from typing import Any
 
 from langchain.agents import create_agent
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langgraph.checkpoint.memory import InMemorySaver
 
 from app.services.llm_service import get_llm
-from app.database.connection import get_db
+from app.services import connection_service
 
-# 全局单例
-_agent = None
-_checkpointer = None
+# 按 connection_id 缓存 Agent 和 Checkpointer
+_agents: dict[str, Any] = {}
+_checkpointers: dict[str, InMemorySaver] = {}
 
 SYSTEM_PROMPT = """你是一个专业的 SQL 数据库查询助手，负责帮助用户通过自然语言查询数据库。
 
 规则：
 1. 首先使用 sql_db_list_tables 查看数据库有哪些表
 2. 使用 sql_db_schema 查看相关表的结构和示例数据
-3. 根据用户问题生成正确的 {dialect} SQL 查询
+3. 根据用户问题生成正确的 MySQL SQL 查询
 4. 使用 sql_db_query_checker 校验 SQL 语法
 5. 使用 sql_db_query 执行查询
 6. 用中文总结查询结果，回答要清晰、有条理
@@ -33,46 +35,75 @@ SYSTEM_PROMPT = """你是一个专业的 SQL 数据库查询助手，负责帮�
 - 不确定时，先查表结构再生成查询"""
 
 
-def get_agent():
+def get_agent(connection_id: str):
     """
-    获取 SQL Agent 单例
+    获取指定连接的 SQL Agent（带缓存）
+
+    Args:
+        connection_id: MySQL 连接 ID
 
     Returns:
         create_agent 创建的 CompiledStateGraph 实例
+
+    Raises:
+        ValueError: 连接 ID 不存在或无法连接
     """
-    global _agent, _checkpointer
+    if connection_id in _agents:
+        return _agents[connection_id]
 
-    if _agent is None:
-        llm = get_llm()
-        db = get_db()
+    # 获取 SQLDatabase 实例
+    db = connection_service.get_sql_database(connection_id)
+    if db is None:
+        raise ValueError(f"连接 '{connection_id}' 不存在或无法获取数据库实例")
 
-        # 创建工具集
-        toolkit = SQLDatabaseToolkit(db=db, llm=llm)
-        tools = toolkit.get_tools()
+    llm = get_llm()
 
-        # 创建 checkpointer（用于多轮对话记忆）
-        _checkpointer = InMemorySaver()
+    # 创建工具集
+    toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+    tools = toolkit.get_tools()
 
-        # 构建 system prompt
-        prompt = SYSTEM_PROMPT.format(
-            dialect=db.dialect,
-            top_k=10,
-        )
+    # 创建 checkpointer（用于多轮对话记忆）
+    checkpointer = InMemorySaver()
 
-        # 创建 Agent
-        _agent = create_agent(
-            llm,
-            tools,
-            system_prompt=prompt,
-            checkpointer=_checkpointer,
-        )
+    # 构建 system prompt
+    prompt = SYSTEM_PROMPT.format(top_k=10)
 
-    return _agent
+    # 创建 Agent
+    agent = create_agent(
+        llm,
+        tools,
+        system_prompt=prompt,
+        checkpointer=checkpointer,
+    )
+
+    _agents[connection_id] = agent
+    _checkpointers[connection_id] = checkpointer
+
+    return agent
 
 
-def get_checkpointer():
-    """获取 checkpointer 实例"""
-    global _checkpointer
-    if _checkpointer is None:
-        get_agent()  # 确保初始化
-    return _checkpointer
+def get_checkpointer(connection_id: str) -> InMemorySaver:
+    """
+    获取指定连接的 checkpointer 实例
+
+    Args:
+        connection_id: MySQL 连接 ID
+    """
+    if connection_id not in _checkpointers:
+        get_agent(connection_id)  # 确保初始化
+    return _checkpointers[connection_id]
+
+
+def clear_agent_cache(connection_id: str = None) -> None:
+    """
+    清除 Agent 缓存（连接配置变更时应调用）
+
+    Args:
+        connection_id: 指定连接 ID，为 None 时清除所有缓存
+    """
+    if connection_id:
+        _agents.pop(connection_id, None)
+        _checkpointers.pop(connection_id, None)
+    else:
+        _agents.clear()
+        _checkpointers.clear()

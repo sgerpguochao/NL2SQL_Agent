@@ -1,10 +1,17 @@
 import { useState, useCallback } from 'react'
 import { SchemaExplorer } from './SchemaExplorer'
 import { SqlEditor } from './SqlEditor'
+import { ConnectionManager } from '../Connection/ConnectionManager'
+import { ConnectionSelector } from '../Connection/ConnectionSelector'
 
-type TabId = 'schema' | 'sql'
+type TabId = 'schema' | 'sql' | 'connections'
 
-export function DatabasePanel() {
+interface Props {
+  /** 当前活动的 MySQL 连接 ID */
+  connectionId?: string
+}
+
+export function DatabasePanel({ connectionId }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>('schema')
   const [prefillSql, setPrefillSql] = useState('')
 
@@ -21,16 +28,17 @@ export function DatabasePanel() {
   const tabs: { id: TabId; label: string }[] = [
     { id: 'schema', label: '表结构' },
     { id: 'sql', label: 'SQL 查询' },
+    { id: 'connections', label: '连接管理' },
   ]
 
   return (
     <div className="flex flex-col h-full">
-      {/* Tab 栏 */}
+      {/* Tab 栏 + 连接选择器 */}
       <div
         className="flex-shrink-0 px-3 pt-2 pb-1 border-b"
         style={{ backgroundColor: 'var(--tech-bg-panel)', borderColor: 'var(--tech-border)' }}
       >
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -47,16 +55,23 @@ export function DatabasePanel() {
               {tab.label}
             </button>
           ))}
+          {/* 连接选择器靠右 */}
+          <div className="ml-auto">
+            <ConnectionSelector compact />
+          </div>
         </div>
       </div>
 
       {/* Tab 内容 */}
       <div className="flex-1 min-h-0">
         {activeTab === 'schema' && (
-          <SchemaExplorer onFillSql={handleFillSql} />
+          <SchemaExplorer onFillSql={handleFillSql} connectionId={connectionId} />
         )}
         {activeTab === 'sql' && (
-          <SqlEditor prefillSql={prefillSql} onPrefillConsumed={handlePrefillConsumed} />
+          <SqlEditor prefillSql={prefillSql} onPrefillConsumed={handlePrefillConsumed} connectionId={connectionId} />
+        )}
+        {activeTab === 'connections' && (
+          <ConnectionManager />
         )}
       </div>
     </div>

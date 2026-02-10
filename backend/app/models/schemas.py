@@ -46,6 +46,7 @@ class SessionDetailResponse(SessionResponse):
 class ChatRequest(BaseModel):
     """聊天请求"""
     message: str = Field(..., min_length=1, description="用户消息内容")
+    connection_id: str = Field(..., min_length=1, description="MySQL 连接 ID（指定使用哪个数据库）")
 
 
 # ===== 图表相关 =====
@@ -80,6 +81,7 @@ class SchemaResponse(BaseModel):
 
 class SqlQueryRequest(BaseModel):
     """SQL 查询请求"""
+    connection_id: str = Field(..., min_length=1, description="MySQL 连接 ID（指定使用哪个数据库）")
     sql: str = Field(..., min_length=1, description="SQL 查询语句（仅允许 SELECT）")
     page: int = Field(default=1, ge=1, description="页码，从 1 开始")
     page_size: int = Field(default=50, ge=1, le=500, description="每页条数")
@@ -94,6 +96,61 @@ class SqlQueryResponse(BaseModel):
     page_size: int = Field(default=50, description="每页条数")
     total_pages: int = Field(default=0, description="总页数")
     elapsed_ms: int = Field(default=0, description="执行耗时（毫秒）")
+
+
+# ===== MySQL 连接管理 =====
+
+class MySQLConnectionCreate(BaseModel):
+    """创建 MySQL 连接请求"""
+    name: str = Field(..., min_length=1, description="连接名称，如：生产库-销售数据")
+    host: str = Field(..., min_length=1, description="MySQL 主机地址")
+    port: int = Field(default=3306, ge=1, le=65535, description="MySQL 端口")
+    user: str = Field(..., min_length=1, description="用户名")
+    password: str = Field(default="", description="密码")
+    database: str = Field(..., min_length=1, description="数据库名")
+
+
+class MySQLConnectionConfig(BaseModel):
+    """MySQL 连接配置（含 ID）"""
+    id: str = Field(..., description="连接 ID（自动生成）")
+    name: str = Field(..., description="连接名称")
+    host: str = Field(..., description="MySQL 主机地址")
+    port: int = Field(default=3306, description="MySQL 端口")
+    user: str = Field(..., description="用户名")
+    password: str = Field(default="", description="密码")
+    database: str = Field(..., description="数据库名")
+
+
+class MySQLConnectionUpdate(BaseModel):
+    """更新 MySQL 连接请求（所有字段可选）"""
+    name: Optional[str] = Field(default=None, description="连接名称")
+    host: Optional[str] = Field(default=None, description="MySQL 主机地址")
+    port: Optional[int] = Field(default=None, ge=1, le=65535, description="MySQL 端口")
+    user: Optional[str] = Field(default=None, description="用户名")
+    password: Optional[str] = Field(default=None, description="密码")
+    database: Optional[str] = Field(default=None, description="数据库名")
+
+
+class ConnectionTestRequest(BaseModel):
+    """连接测试请求（不保存，仅测试）"""
+    host: str = Field(..., min_length=1, description="MySQL 主机地址")
+    port: int = Field(default=3306, ge=1, le=65535, description="MySQL 端口")
+    user: str = Field(..., min_length=1, description="用户名")
+    password: str = Field(default="", description="密码")
+    database: str = Field(..., min_length=1, description="数据库名")
+
+
+class ConnectionTestResult(BaseModel):
+    """连接测试结果"""
+    success: bool = Field(..., description="连接是否成功")
+    message: str = Field(..., description="结果描述信息")
+    mysql_version: Optional[str] = Field(default=None, description="MySQL 版本号")
+    tables_count: Optional[int] = Field(default=None, description="数据库中的表数量")
+
+
+class ConnectionListResponse(BaseModel):
+    """连接列表响应"""
+    connections: list[MySQLConnectionConfig] = Field(default_factory=list, description="所有连接配置")
 
 
 # ===== 通用 =====

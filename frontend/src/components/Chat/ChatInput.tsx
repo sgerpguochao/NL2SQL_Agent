@@ -2,22 +2,29 @@ import { useState, useRef, type KeyboardEvent } from 'react'
 import { useChatStore } from '../../stores/chatStore'
 import { useSessionStore } from '../../stores/sessionStore'
 
-export function ChatInput() {
+interface Props {
+  /** 当前活动的 MySQL 连接 ID */
+  connectionId?: string
+}
+
+export function ChatInput({ connectionId }: Props) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const activeSessionId = useSessionStore((s) => s.activeSessionId)
   const { isStreaming, sendMessage } = useChatStore()
 
+  const canSend = !!input.trim() && !!activeSessionId && !isStreaming && !!connectionId
+
   const handleSend = async () => {
     const text = input.trim()
-    if (!text || !activeSessionId || isStreaming) return
+    if (!text || !activeSessionId || isStreaming || !connectionId) return
 
     setInput('')
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
 
-    await sendMessage(activeSessionId, text)
+    await sendMessage(activeSessionId, text, connectionId)
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -48,21 +55,21 @@ export function ChatInput() {
           value={input}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder="输入自然语言查询，如：上个月的销售总额是多少？"
+          placeholder={connectionId ? '输入自然语言查询，如：上个月的销售总额是多少？' : '请先选择数据库连接...'}
           rows={1}
           className="flex-1 bg-transparent resize-none outline-none text-sm text-gray-100 placeholder-gray-500 max-h-[150px]"
-          disabled={isStreaming}
+          disabled={isStreaming || !connectionId}
         />
         <button
           onClick={handleSend}
-          disabled={!input.trim() || isStreaming}
+          disabled={!canSend}
           className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-            input.trim() && !isStreaming
+            canSend
               ? 'text-white'
               : 'cursor-not-allowed'
           }`}
           style={
-            input.trim() && !isStreaming
+            canSend
               ? { backgroundColor: 'var(--tech-accent)' }
               : { backgroundColor: 'var(--tech-bg-elevated)', color: 'var(--tech-text-muted)' }
           }

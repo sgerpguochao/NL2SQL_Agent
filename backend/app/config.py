@@ -12,8 +12,15 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     LLM_TEMPERATURE: float = 0.7
 
-    # 数据库配置
-    DB_PATH: str = "./data/business.db"
+    # MySQL 默认连接（可通过 .env 覆盖）
+    MYSQL_HOST: str = "localhost"
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = ""
+    MYSQL_DATABASE: str = ""
+
+    # 连接配置持久化路径
+    CONNECTIONS_FILE: str = "./data/connections.json"
 
     model_config = {
         "env_file": os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),

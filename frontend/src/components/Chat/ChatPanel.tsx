@@ -1,8 +1,14 @@
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { useSessionStore } from '../../stores/sessionStore'
+import { ConnectionSelector } from '../Connection/ConnectionSelector'
 
-export function ChatPanel() {
+interface Props {
+  /** 当前活动的 MySQL 连接 ID */
+  connectionId?: string
+}
+
+export function ChatPanel({ connectionId }: Props) {
   const activeSessionId = useSessionStore((s) => s.activeSessionId)
   const activeTitle = useSessionStore((s) =>
     s.activeSessionId ? s.sessions.find((sess) => sess.id === s.activeSessionId)?.title ?? '对话' : ''
@@ -25,19 +31,21 @@ export function ChatPanel() {
     <div className="flex flex-col h-full">
       {/* 顶部标题栏 */}
       <div
-        className="px-6 py-3 border-b"
+        className="px-6 py-3 border-b flex items-center justify-between"
         style={{ borderColor: 'var(--tech-border)', backgroundColor: 'var(--tech-bg-panel)' }}
       >
         <h2 className="text-sm font-medium" style={{ color: 'var(--tech-text)' }}>
           {activeTitle}
         </h2>
+        {/* 连接选择器 */}
+        <ConnectionSelector compact />
       </div>
 
       {/* 消息列表 */}
       <MessageList />
 
       {/* 输入区域 */}
-      <ChatInput />
+      <ChatInput connectionId={connectionId} />
     </div>
   )
 }

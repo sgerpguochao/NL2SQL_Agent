@@ -2,25 +2,25 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import session, chat, database
-from app.database.sample_data import init_sample_database
+from app.routers import session, chat, database, connection
+from app.services.connection_service import init_default_connection
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """应用生命周期：启动时初始化示例数据库"""
-    initialized = init_sample_database()
-    if initialized:
-        print("[启动] 示例数据库初始化完成")
+    """应用生命周期：启动时初始化默认 MySQL 连接"""
+    default_conn = init_default_connection()
+    if default_conn:
+        print(f"[启动] 已创建默认 MySQL 连接: {default_conn.name} ({default_conn.host}:{default_conn.port}/{default_conn.database})")
     else:
-        print("[启动] 示例数据库已存在，跳过初始化")
+        print("[启动] 已有连接配置或未配置 MySQL 默认参数，跳过默认连接创建")
     yield
 
 
 app = FastAPI(
     title="NL2SQL 智能数据分析系统",
-    description="基于自然语言查询数据库并自动生成可视化图表",
-    version="0.2.0",
+    description="基于自然语言查询 MySQL 数据库并自动生成可视化图表",
+    version="1.0.0-mysql",
     lifespan=lifespan,
 )
 
@@ -39,6 +39,7 @@ app.add_middleware(
 )
 
 # 挂载路由
+app.include_router(connection.router)
 app.include_router(session.router)
 app.include_router(chat.router)
 app.include_router(database.router)
@@ -47,4 +48,4 @@ app.include_router(database.router)
 @app.get("/api/health")
 async def health_check():
     """健康检查接口"""
-    return {"status": "ok", "service": "nl2sql-backend", "version": "0.2.0"}
+    return {"status": "ok", "service": "nl2sql-backend", "version": "1.0.0-mysql"}

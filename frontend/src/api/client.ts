@@ -3,19 +3,36 @@
  *
  * 后端接口一览：
  *  REST:
- *    POST   /api/sessions              创建会话
- *    GET    /api/sessions              会话列表
- *    GET    /api/sessions/:id          会话详情（含消息）
- *    PUT    /api/sessions/:id          更新标题
- *    DELETE /api/sessions/:id          删除会话
- *    GET    /api/database/schema       数据库表结构
- *    POST   /api/database/query        SQL 查询（分页）
+ *    POST   /api/sessions                       创建会话
+ *    GET    /api/sessions                       会话列表
+ *    GET    /api/sessions/:id                   会话详情（含消息）
+ *    PUT    /api/sessions/:id                   更新标题
+ *    DELETE /api/sessions/:id                   删除会话
+ *    GET    /api/database/schema?connection_id=  数据库表结构（需要 connection_id）
+ *    POST   /api/database/query                 SQL 查询（需要 connection_id）
+ *    GET    /api/connections                    连接列表
+ *    POST   /api/connections                    新增连接
+ *    GET    /api/connections/:id                连接详情
+ *    PUT    /api/connections/:id                更新连接
+ *    DELETE /api/connections/:id                删除连接
+ *    POST   /api/connections/test               测试连接（不保存）
+ *    POST   /api/connections/:id/test           测试已保存连接
  *  SSE:
- *    POST   /api/chat/:sessionId/stream  聊天流式接口
+ *    POST   /api/chat/:sessionId/stream         聊天流式接口（需要 connection_id）
  */
 
 import axios from 'axios'
-import type { Session, ChartData, TableSchema, SqlQueryResult } from '../types'
+import type {
+  Session,
+  ChartData,
+  TableSchema,
+  SqlQueryResult,
+  MySQLConnection,
+  MySQLConnectionCreate,
+  MySQLConnectionUpdate,
+  ConnectionTestRequest,
+  ConnectionTestResult,
+} from '../types'
 
 // ======================== Axios 实例 ========================
 
@@ -80,19 +97,23 @@ export async function deleteSessionApi(id: string): Promise<void> {
 
 // ======================== 数据库工具 API ========================
 
-/** 获取数据库 schema（所有表结构） */
-export async function fetchSchemaApi(): Promise<{ tables: TableSchema[] }> {
-  const { data } = await api.get<{ tables: TableSchema[] }>('/database/schema')
+/** 获取数据库 schema（所有表结构，需要 connection_id） */
+export async function fetchSchemaApi(connectionId: string): Promise<{ tables: TableSchema[] }> {
+  const { data } = await api.get<{ tables: TableSchema[] }>('/database/schema', {
+    params: { connection_id: connectionId },
+  })
   return data
 }
 
-/** 执行 SQL 查询（仅 SELECT，带分页） */
+/** 执行 SQL 查询（仅 SELECT，带分页，需要 connection_id） */
 export async function executeSqlApi(
+  connectionId: string,
   sql: string,
   page: number = 1,
   pageSize: number = 50,
 ): Promise<SqlQueryResult> {
   const { data } = await api.post<SqlQueryResult>('/database/query', {
+    connection_id: connectionId,
     sql,
     page,
     page_size: pageSize,
@@ -120,16 +141,18 @@ export interface SSECallbacks {
 
 /**
  * 发送聊天消息并通过 SSE 接收流式响应
+ * @param connectionId MySQL 连接 ID（后端必需字段）
  */
 export async function sendChatMessageApi(
   sessionId: string,
   message: string,
+  connectionId: string,
   callbacks: SSECallbacks,
 ): Promise<void> {
   const response = await fetch(`/api/chat/${sessionId}/stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, connection_id: connectionId }),
   })
 
   if (!response.ok) {
@@ -201,4 +224,52 @@ export async function sendChatMessageApi(
       }
     }
   }
+}
+
+// ======================== MySQL 连接管理 API ========================
+
+/** 连接列表响应（后端返回 { connections: [...] }） */
+interface ConnectionListResponse {
+  connections: MySQLConnection[]
+}
+
+/** 获取所有连接配置 */
+export async function fetchConnectionsApi(): Promise<MySQLConnection[]> {
+  const { data } = await api.get<ConnectionListResponse>('/connections')
+  return data.connections
+}
+
+/** 新增连接 */
+export async function createConnectionApi(body: MySQLConnectionCreate): Promise<MySQLConnection> {
+  const { data } = await api.post<MySQLConnection>('/connections', body)
+  return data
+}
+
+/** 获取单个连接详情 */
+export async function getConnectionApi(connId: string): Promise<MySQLConnection> {
+  const { data } = await api.get<MySQLConnection>(`/connections/${connId}`)
+  return data
+}
+
+/** 更新连接配置 */
+export async function updateConnectionApi(connId: string, body: MySQLConnectionUpdate): Promise<MySQLConnection> {
+  const { data } = await api.put<MySQLConnection>(`/connections/${connId}`, body)
+  return data
+}
+
+/** 删除连接 */
+export async function deleteConnectionApi(connId: string): Promise<void> {
+  await api.delete(`/connections/${connId}`)
+}
+
+/** 测试连接（不保存，仅验证参数） */
+export async function testConnectionApi(body: ConnectionTestRequest): Promise<ConnectionTestResult> {
+  const { data } = await api.post<ConnectionTestResult>('/connections/test', body)
+  return data
+}
+
+/** 测试已保存的连接 */
+export async function testConnectionByIdApi(connId: string): Promise<ConnectionTestResult> {
+  const { data } = await api.post<ConnectionTestResult>(`/connections/${connId}/test`)
+  return data
 }
