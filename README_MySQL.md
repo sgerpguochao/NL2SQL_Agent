@@ -59,6 +59,10 @@
 
 ```
 nl2sql_agent/
+├── start.bat              # Windows 一键启动（后端 + 前端）
+├── start.sh                # Linux/Mac 一键启动
+├── stop.bat                # Windows 停止占用 8118/5173 端口的进程
+├── stop.sh                 # Linux/Mac 停止前后端进程
 ├── backend/
 │   ├── app/
 │   │   ├── main.py                 # FastAPI 入口，挂载 session/chat/database/connection 路由
@@ -124,8 +128,8 @@ nl2sql_agent/
 ```bash
 git clone https://github.com/sgerpguochao/NL2SQL_Agent.git
 cd NL2SQL_Agent
-# 使用 MySQL 版本
-git checkout v1.0.0-mysql
+# 若仓库为多分支，使用 MySQL 版本： git checkout v1.0.0-mysql
+# 本仓库若已是 MySQL 版本则无需 checkout
 ```
 
 ### 2. 准备 MySQL 数据库
@@ -137,7 +141,7 @@ CREATE DATABASE ai_sales_data CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 -- 根据业务需要导入或创建表结构
 ```
 
-### 3. 后端配置与启动
+### 3. 后端配置
 
 ```bash
 conda create -n nl2sql_vc python=3.11
@@ -145,9 +149,11 @@ conda activate nl2sql_vc
 
 cd backend
 pip install -r requirements.txt
+```
 
-# 创建 .env 文件
-cat > .env << EOF
+在 `backend` 目录下创建 `.env` 文件，填入以下内容（按实际修改）：
+
+```env
 DASHSCOPE_API_KEY=你的API_Key
 LLM_MODEL_NAME=qwen3-max
 LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
@@ -156,23 +162,51 @@ MYSQL_PORT=3306
 MYSQL_USER=root
 MYSQL_PASSWORD=你的密码
 MYSQL_DATABASE=ai_sales_data
-EOF
+```
 
-# 启动后端（首次启动可自动创建默认连接）
+- **Linux / Mac** 可用：`cat > .env << 'EOF'` 然后粘贴上述内容，最后输入 `EOF` 回车。
+- **Windows** 可用记事本或：  
+  `copy NUL .env` 后编辑，或在 PowerShell 中逐行 `Add-Content .env "DASHSCOPE_API_KEY=你的Key"`。
+
+### 4. 前端依赖
+
+```bash
+# 在项目根目录
+cd frontend
+npm install
+```
+
+### 5. 启动方式（二选一）
+
+#### 方式 A：一键启动（推荐）
+
+- **Windows**：双击根目录下的 `start.bat`，会依次启动后端（8118）和前端（5173），并打开两个命令行窗口。
+- **Linux / Mac**：在项目根目录执行 `./start.sh`，后端与前端以后台运行，日志在 `.backend.log`、`.frontend.log`；停止服务请执行 `./stop.sh`。
+
+启动后：
+- 后端：http://127.0.0.1:8118  
+- 前端：http://127.0.0.1:5173 或 http://0.0.0.0:5173  
+
+#### 方式 B：手动分步启动
+
+**终端 1 - 后端：**
+
+```bash
+conda activate nl2sql_vc
+cd backend
 python -m uvicorn app.main:app --reload --port 8118
 ```
 
-### 4. 前端配置与启动
+**终端 2 - 前端：**
 
 ```bash
 cd frontend
-npm install
 npm run dev
 ```
 
-### 5. 访问应用
+### 6. 访问应用
 
-打开浏览器访问 `http://localhost:5173`。  
+打开浏览器访问 **http://localhost:5173**。  
 首次加载时会自动拉取连接列表并校验默认连接；若无有效连接，可通过「连接管理」Tab 新增并测试连接。
 
 ---
@@ -283,9 +317,10 @@ npm run build
 
 ## 开发说明
 
+- **一键脚本**：根目录提供 `start.bat` / `start.sh` 同时启动后端与前端；`stop.bat` / `stop.sh` 会结束占用 8118、5173 端口的进程以停止服务（Windows 也可直接关闭启动时打开的命令行窗口）。
 - 后端 `--reload` 模式：`python -m uvicorn app.main:app --reload --port 8118`
-- 前端 Vite 通过 proxy 将 `/api` 代理到 `127.0.0.1:8118`
-- 连接配置存储在 `backend/data/connections.json`，可手动编辑（不推荐）
+- 前端 Vite 通过 proxy 将 `/api` 代理到 `127.0.0.1:8118`；一键启动时使用 `npx vite --host 0.0.0.0` 便于局域网访问。
+- 连接配置存储在 `backend/data/connections.json`（首次使用后自动生成），可手动编辑（不推荐）。
 
 ---
 
